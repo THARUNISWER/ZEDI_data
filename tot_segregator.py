@@ -46,6 +46,18 @@ format = "%Y-%m-%d %H:%M:%S"
 DELIM = "|"
 val = None
 
+
+# function for error correction
+def conv(var):
+    try:
+        ans = float(var)
+    except:
+        print("Erraneous data: " + var)
+        ans = val
+    return ans
+
+
+
 # a function that takes in the dataframe_id and all values in a raw line and segregates data accordingly
 
 
@@ -53,10 +65,16 @@ def updation(dataframe_id, values):
     if dataframe_id == 1:  # for current_r and voltage_r dataframe_id is 1
         i = 6  # actual repeating data starts from index 6 in line without delimiter
         while i < len(values):
-            epoch = int(values[i])
+            try:
+                epoch = int(values[i])
+            except:
+                print("Invalid epoch data " + values[i])
+                i = i+3
+                continue
             curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)  # epoch to datetime object converter
-            voltage = float(values[i-1])
-            current = float(values[i-2])
+            # conv to convert to float as well as check error
+            voltage = conv(values[i-1])
+            current = conv(values[i-2])
 
             # checking if that datetime is already present in the database
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)", [str(curr_date_time.strftime(format))])
@@ -78,10 +96,15 @@ def updation(dataframe_id, values):
     elif dataframe_id == 2:
         i = 6
         while i < len(values):
-            epoch = int(values[i])
+            try:
+                epoch = int(values[i])
+            except:
+                print("Invalid epoch data " + values[i])
+                i = i+3
+                continue
             curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
-            voltage = float(values[i - 1])
-            current = float(values[i - 2])
+            voltage = conv(values[i - 1])
+            current = conv(values[i - 2])
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
             out = str(crsr.fetchall())
@@ -100,10 +123,15 @@ def updation(dataframe_id, values):
     elif dataframe_id == 3:
         i = 6
         while i < len(values):
-            epoch = int(values[i])
-            curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
-            voltage = float(values[i - 1])
-            current = float(values[i - 2])
+            try:
+                epoch = int(values[i])
+            except:
+                print("Invalid epoch data " + values[i])
+                i = i+3
+                continue
+            curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)  # epoch to datetime object converter
+            voltage = conv(values[i - 1])
+            current = conv(values[i - 2])
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
             if str(crsr.fetchall()) != "[(0,)]":
@@ -121,9 +149,15 @@ def updation(dataframe_id, values):
     elif dataframe_id == 4:
         i = 5
         while i < len(values):
-            epoch = int(values[i])
+            try:
+                epoch = int(values[i])
+            except:
+                print("Invalid epoch data " + values[i])
+                i = i+2
+                continue
             curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
-            frequency = float(values[i - 1])
+            frequency = conv(values[i - 1])
+
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
             if str(crsr.fetchall()) != "[(0,)]":
@@ -140,9 +174,14 @@ def updation(dataframe_id, values):
     elif dataframe_id == 5:
         i = 5
         while i < len(values):
-            epoch = int(values[i])
+            try:
+                epoch = int(values[i])
+            except:
+                print("Invalid epoch data " + values[i])
+                i = i+2
+                continue
             curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
-            frequency = float(values[i - 1])
+            frequency = conv(values[i - 1])
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
             if str(crsr.fetchall()) != "[(0,)]":
@@ -159,9 +198,14 @@ def updation(dataframe_id, values):
     elif dataframe_id == 6:
         i = 5
         while i < len(values):
-            epoch = int(values[i])
+            try:
+                epoch = int(values[i])
+            except:
+                print("Invalid epoch data " + values[i])
+                i = i + 2
+                continue
             curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
-            frequency = float(values[i - 1])
+            frequency = conv(values[i - 1])
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
             if str(crsr.fetchall()) != "[(0,)]":
@@ -177,29 +221,33 @@ def updation(dataframe_id, values):
             i = i + 2
     elif dataframe_id == 7:
         i = len(values) - 1  # starting from last in case of 7 as light_level, ultrasonic not needed
-        epoch = int(values[i])
+        try:
+            epoch = int(values[i])
+        except:
+            print("Invalid epoch 7 data")
+            return
         curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
-        co2 = float(values[i - 4])
-        pir2 = float(values[i - 5])
-        pir1 = float(values[i - 6])
-        aqi = float(values[i - 7])
-        bme680_pressure = float(values[i - 8])
-        bme680_humidity = float(values[i - 9])
-        bme680_temp = float(values[i - 10])
-        bme280_pressure = float(values[i - 11])
-        bme280_humidity = float(values[i - 12])
-        bme280_temp = float(values[i - 13])
+        co2 = conv(values[i - 4])
+        pir2 = conv(values[i-5])
+        pir1 = conv(values[i - 6])
+        aqi = conv(values[i - 7])
+        bme680_pressure = conv(values[i - 8])
+        bme680_humidity = conv(values[i - 9])
+        bme680_temp = conv(values[i - 10])
+        bme280_pressure = conv(values[i - 11])
+        bme280_humidity = conv(values[i - 12])
+        bme280_temp = conv(values[i - 13])
 
         temperature = bme280_temp
         pressure = bme280_pressure
         humidity = bme280_humidity
 
         # if bme_280 values are 0 i.e missing we go with bme_680 values in the table
-        if bme280_temp == 0:
+        if bme280_temp == 0 or bme280_temp == val:
             temperature = bme680_temp
-        if bme280_pressure == 0:
+        if bme280_pressure == 0 or bme280_pressure == val:
             pressure = bme680_pressure
-        if bme280_humidity == 0:
+        if bme280_humidity == 0 or bme280_humidity == val:
             humidity = bme680_humidity
 
         crsr.execute("SELECT EXISTS(SELECT * from ZEDI_5m WHERE date_and_time = ?)",
@@ -226,8 +274,11 @@ for root, subdirectories, files in os.walk(node_path):
         file = open(os.path.join(root, filename))
         # iterating through all lines in the file
         for line in file:
-            values = line.split(DELIM)  # removing delimiter and extracting data in array fo strings
-            ID = int(values[3])
+            values = line.split(DELIM)# removing delimiter and extracting data in array fo strings
+            try:
+                ID = int(values[3])
+            except:
+                continue
             updation(ID, values)
         print("Ended: " + os.path.join(root, filename))
         file.close()
@@ -236,14 +287,25 @@ connection.commit() # all changes that this code does are commited to the databa
 
 # retrieving maximum and minimum date in database for further processing in extractor
 display_format = "[('%Y-%m-%d %H:%M:%S',)]"
-crsr.execute("SELECT MIN(date_and_time) FROM ZEDI_1s")
-min_date_time_1s = datetime.strptime(str(crsr.fetchall()), display_format)
-crsr.execute("SELECT MAX(date_and_time) FROM ZEDI_1s")
-max_date_time_1s = datetime.strptime(str(crsr.fetchall()), display_format)
-crsr.execute("SELECT MIN(date_and_time) FROM ZEDI_5m")
-min_date_time_5m = datetime.strptime(str(crsr.fetchall()), display_format)
-crsr.execute("SELECT MAX(date_and_time) FROM ZEDI_5m")
-max_date_time_5m = datetime.strptime(str(crsr.fetchall()), display_format)
+
+min_date_time_1s = datetime(1974,2,12,0,0,0)
+max_date_time_1s = datetime(1974,2,12,0,0,0)
+min_date_time_5m = datetime(1974,2,12,0,0,0)
+max_date_time_5m = datetime(1974,2,12,0,0,0)
+try:
+    crsr.execute("SELECT MIN(date_and_time) FROM ZEDI_1s")
+    min_date_time_1s = datetime.strptime(str(crsr.fetchall()), display_format)
+    crsr.execute("SELECT MAX(date_and_time) FROM ZEDI_1s")
+    max_date_time_1s = datetime.strptime(str(crsr.fetchall()), display_format)
+except:
+    print("No 1s_data")
+try:
+    crsr.execute("SELECT MIN(date_and_time) FROM ZEDI_5m")
+    min_date_time_5m = datetime.strptime(str(crsr.fetchall()), display_format)
+    crsr.execute("SELECT MAX(date_and_time) FROM ZEDI_5m")
+    max_date_time_5m = datetime.strptime(str(crsr.fetchall()), display_format)
+except:
+    print("No 5m_data")
 
 connection.close()
 
