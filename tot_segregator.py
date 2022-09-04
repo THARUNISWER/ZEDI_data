@@ -1,6 +1,7 @@
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime
 import os
+import pytz
 
 # Connecting with sql database (database auto creats if not present)
 connection = sqlite3.connect("ZEDI_data.db")
@@ -10,6 +11,9 @@ node_path = input("Enter path to node: ")
 # the final directories where segregated excel files need to be created (used in extractor)
 directory_1s = input("Enter path for directory of 1s_sorted_data for this node: ")
 directory_5m = input("Enter path for directory of 5m_sorted_data for this node: ")
+
+# Indian timezone for epoch
+tz_IN = pytz.timezone("Asia/Kolkata")
 
 crsr = connection.cursor()
 
@@ -23,6 +27,10 @@ sql_command = "CREATE TABLE ZEDI_1s(" \
               "VOLTAGE_R decimal(9,3)," \
               "VOLTAGE_Y decimal(9,3)," \
               "VOLTAGE_B decimal(9,3)," \
+              "POWER_R decimal(9,3)," \
+              "POWER_Y decimal(9,3)," \
+              "POWER_B decimal(9,3)," \
+              "POWER_TOT decimal(9,3)," \
               "FREQ_R decimal(9,3)," \
               "FREQ_Y decimal(9,3)," \
               "FREQ_B decimal(9,3))"
@@ -57,10 +65,15 @@ def conv(var):
     return ans
 
 
+# function to calculate power precisely based on voltage
+def condition(current, voltage):
+    power = 0.0
+    if voltage > 100:
+        power = current*voltage
+    return power
+
 
 # a function that takes in the dataframe_id and all values in a raw line and segregates data accordingly
-
-
 def updation(dataframe_id, values):
     if dataframe_id == 1:  # for current_r and voltage_r dataframe_id is 1
         i = 6  # actual repeating data starts from index 6 in line without delimiter
@@ -71,24 +84,27 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i+3
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)  # epoch to datetime object converter
+            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)  # epoch to datetime object converter
             # conv to convert to float as well as check error
             voltage = conv(values[i-1])
             current = conv(values[i-2])
-
+            power = 0.0
+            # power is calculated
+            if current is not None and voltage is not None:
+                power = condition(current, voltage)
             # checking if that datetime is already present in the database
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)", [str(curr_date_time.strftime(format))])
             out = str(crsr.fetchall())
             if out != "[(0,)]":
                 # if datetime is already present update existing row to include new data
-                crsr.execute("UPDATE ZEDI_1s SET current_R = ?, VOLTAGE_R = ? WHERE date_and_time= ?", (current,
-                                                                                                        voltage,
+                crsr.execute("UPDATE ZEDI_1s SET current_R = ?, VOLTAGE_R = ?,POWER_R = ?  WHERE date_and_time= ?", (current,
+                                                                                                        voltage, power,
                                                                                             str(curr_date_time.strftime(format))))
             else:
                 # if datetime is not present insert a new row with that datetime and data
                 crsr.execute('INSERT INTO ZEDI_1s VALUES (?, ?, ?, ?, ?,'
-                             '?, ?, ?, ?, ?)',
-                             (str(curr_date_time.strftime(format)), current, val, val, voltage, val, val, val, val, val))
+                             '?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                             (str(curr_date_time.strftime(format)), current, val, val, voltage, val, val, power, val, val, val, val, val, val))
 
             i = i + 3
 
@@ -102,23 +118,27 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i+3
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
+            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)
             voltage = conv(values[i - 1])
             current = conv(values[i - 2])
+            power = 0.0
+            if current is not None and voltage is not None:
+                power = condition(current, voltage)
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
             out = str(crsr.fetchall())
             if out != "[(0,)]":
-                crsr.execute("UPDATE ZEDI_1s SET current_Y = ?, VOLTAGE_Y = ? WHERE date_and_time= ?", (current,
+                crsr.execute("UPDATE ZEDI_1s SET current_Y = ?, VOLTAGE_Y = ?, POWER_Y = ? WHERE date_and_time= ?", (current,
                                                                                                         voltage,
+                                                                                                        power,
                                                                                                         str(curr_date_time.
                                                                                                         strftime(
                                                                                                         format))))
             else:
                 crsr.execute('INSERT INTO ZEDI_1s VALUES (?, ?, ?, ?, ?,'
-                             '?, ?, ?, ?, ?)',
-                             (str(curr_date_time.strftime(format)), val, current, val, val, voltage, val, val, val, val))
-
+                             '?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                             (str(curr_date_time.strftime(format)), val, current, val, val, voltage, val, val, power,
+                              val, val, val, val, val))
             i = i + 3
     elif dataframe_id == 3:
         i = 6
@@ -129,22 +149,26 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i+3
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)  # epoch to datetime object converter
+            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)  # epoch to datetime object converter
             voltage = conv(values[i - 1])
             current = conv(values[i - 2])
+            power = 0.0
+            if current is not None and voltage is not None:
+                power = condition(current, voltage)
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
             if str(crsr.fetchall()) != "[(0,)]":
-                crsr.execute("UPDATE ZEDI_1s SET current_B = ?, VOLTAGE_B = ? WHERE date_and_time= ?", (current,
+                crsr.execute("UPDATE ZEDI_1s SET current_B = ?, VOLTAGE_B = ?, POWER_B = ? WHERE date_and_time= ?", (current,
                                                                                                     voltage,
+                                                                                                    power,
                                                                                                     str(
                                                                                                         curr_date_time.strftime(
                                                                                                             format))))
             else:
                 crsr.execute('INSERT INTO ZEDI_1s VALUES (?, ?, ?, ?, ?,'
-                             '?, ?, ?, ?, ?)',
-                             (str(curr_date_time.strftime(format)), val, val, current, val, val, voltage, val, val, val))
-
+                             '?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                             (str(curr_date_time.strftime(format)), val, val, current, val, val, voltage, val, val,
+                              power, val, val, val, val))
             i = i + 3
     elif dataframe_id == 4:
         i = 5
@@ -155,7 +179,7 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i+2
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
+            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)
             frequency = conv(values[i - 1])
 
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
@@ -167,8 +191,8 @@ def updation(dataframe_id, values):
                                                                                          format))))
             else:
                 crsr.execute('INSERT INTO ZEDI_1s VALUES (?, ?, ?, ?, ?,'
-                             '?, ?, ?, ?, ?)',
-                             (str(curr_date_time.strftime(format)), val, val, val, val, val, val, frequency, val, val))
+                             '?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                             (str(curr_date_time.strftime(format)), val, val, val, val, val, val,val, val ,val, val, frequency, val, val))
 
             i = i + 2
     elif dataframe_id == 5:
@@ -180,7 +204,7 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i+2
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
+            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)
             frequency = conv(values[i - 1])
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
@@ -191,8 +215,9 @@ def updation(dataframe_id, values):
                                                                                           format))))
             else:
                 crsr.execute('INSERT INTO ZEDI_1s VALUES (?, ?, ?, ?, ?,'
-                             '?, ?, ?, ?, ?)',
-                             (str(curr_date_time.strftime(format)), val, val, val, val, val, val, val, frequency, val))
+                             '?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                             (str(curr_date_time.strftime(format)), val, val, val, val, val, val, val, val, val, val,
+                              val, frequency, val))
 
             i = i + 2
     elif dataframe_id == 6:
@@ -204,7 +229,7 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i + 2
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
+            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)
             frequency = conv(values[i - 1])
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
@@ -215,8 +240,9 @@ def updation(dataframe_id, values):
                                                                                           format))))
             else:
                 crsr.execute('INSERT INTO ZEDI_1s VALUES (?, ?, ?, ?, ?,'
-                             '?, ?, ?, ?, ?)',
-                             (str(curr_date_time.strftime(format)), val, val, val, val, val, val, val, val, frequency))
+                             '?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                             (str(curr_date_time.strftime(format)), val, val, val, val, val, val, val, val, val, val,
+                              val, val, frequency))
 
             i = i + 2
     elif dataframe_id == 7:
@@ -226,7 +252,7 @@ def updation(dataframe_id, values):
         except:
             print("Invalid epoch 7 data")
             return
-        curr_date_time = datetime.fromtimestamp(epoch, timezone.utc)
+        curr_date_time = datetime.fromtimestamp(epoch, tz_IN)
         co2 = conv(values[i - 4])
         pir2 = conv(values[i-5])
         pir1 = conv(values[i - 6])
@@ -274,7 +300,7 @@ for root, subdirectories, files in os.walk(node_path):
         file = open(os.path.join(root, filename))
         # iterating through all lines in the file
         for line in file:
-            values = line.split(DELIM)# removing delimiter and extracting data in array fo strings
+            values = line.split(DELIM)  # removing delimiter and extracting data in array fo strings
             try:
                 ID = int(values[3])
             except:
@@ -282,6 +308,7 @@ for root, subdirectories, files in os.walk(node_path):
             updation(ID, values)
         print("Ended: " + os.path.join(root, filename))
         file.close()
+crsr.execute("UPDATE ZEDI_1s SET POWER_TOT = POWER_R + POWER_Y + POWER_B")
 
 connection.commit() # all changes that this code does are commited to the database
 
