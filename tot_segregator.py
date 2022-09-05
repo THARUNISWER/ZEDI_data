@@ -13,7 +13,7 @@ directory_1s = input("Enter path for directory of 1s_sorted_data for this node: 
 directory_5m = input("Enter path for directory of 5m_sorted_data for this node: ")
 
 # Indian timezone for epoch
-tz_IN = pytz.timezone("Asia/Kolkata")
+tz_GMT = pytz.timezone("UTC")
 
 crsr = connection.cursor()
 
@@ -84,7 +84,7 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i+3
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)  # epoch to datetime object converter
+            curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)  # epoch to datetime object converter
             # conv to convert to float as well as check error
             voltage = conv(values[i-1])
             current = conv(values[i-2])
@@ -118,7 +118,7 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i+3
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)
+            curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)
             voltage = conv(values[i - 1])
             current = conv(values[i - 2])
             power = 0.0
@@ -149,7 +149,7 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i+3
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)  # epoch to datetime object converter
+            curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)  # epoch to datetime object converter
             voltage = conv(values[i - 1])
             current = conv(values[i - 2])
             power = 0.0
@@ -179,7 +179,7 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i+2
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)
+            curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)
             frequency = conv(values[i - 1])
 
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
@@ -204,7 +204,7 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i+2
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)
+            curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)
             frequency = conv(values[i - 1])
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
@@ -229,7 +229,7 @@ def updation(dataframe_id, values):
                 print("Invalid epoch data " + values[i])
                 i = i + 2
                 continue
-            curr_date_time = datetime.fromtimestamp(epoch, tz_IN)
+            curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)
             frequency = conv(values[i - 1])
             crsr.execute("SELECT EXISTS(SELECT * from ZEDI_1s WHERE date_and_time = ?)",
                          [str(curr_date_time.strftime(format))])
@@ -252,7 +252,7 @@ def updation(dataframe_id, values):
         except:
             print("Invalid epoch 7 data")
             return
-        curr_date_time = datetime.fromtimestamp(epoch, tz_IN)
+        curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)
         co2 = conv(values[i - 4])
         pir2 = conv(values[i-5])
         pir1 = conv(values[i - 6])
