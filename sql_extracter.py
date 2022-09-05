@@ -9,7 +9,9 @@ end_date_time_1s = tot_segregator.max_date_time_1s
 start_date_time_1s = tot_segregator.min_date_time_1s
 end_date_time_5m = tot_segregator.max_date_time_5m
 start_date_time_5m = tot_segregator.min_date_time_5m
-
+order_1s = "DATE_AND_TIME, CURRENT_R, CURRENT_Y, CURRENT_B, VOLTAGE_R, VOLTAGE_Y, VOLTAGE_B" \
+           ", FREQ_R, FREQ_Y, FREQ_B, POWER_R, POWER_Y, POWER_B, POWER_TOT"
+order_5m = "DATE_AND_TIME, TEMPERATURE, HUMIDITY, PRESSURE, AQI, CO2, PIR1, PIR2"
 
 # function to add one month for iteration purpose in 5m data
 def add_months(sourcedate, months):
@@ -29,7 +31,7 @@ def last_day_of_month(any_day):
 
 
 conn = sqlite3.connect("ZEDI_data.db")
-FILE_NAME_FORMAT_1S = "%d-%m-%y"
+FILE_NAME_FORMAT_1S = "%Y-%m-%d"
 
 print("Extraction started...")
 # iterating over all days between start_date_time and end_date_time
@@ -42,7 +44,8 @@ while curr_date_time <= end_date_time_1s:
 
     # end_date is year:month:day 11:59:59
     sql_query = pd.read_sql_query('''
-                                  SELECT * FROM ZEDI_1s WHERE date_and_time BETWEEN ? AND ?
+                                  SELECT DATE_AND_TIME, CURRENT_R, CURRENT_Y, CURRENT_B, VOLTAGE_R, VOLTAGE_Y, VOLTAGE_B, FREQ_R, FREQ_Y, FREQ_B, POWER_R, POWER_Y, POWER_B, POWER_TOT
+                                   FROM ZEDI_1s WHERE date_and_time BETWEEN ? AND ?
                                   ''', conn, params=[start_date_time, end_date_time])
     # here, the 'conn' is the variable that contains your database connection information from step 2
 
@@ -55,7 +58,7 @@ while curr_date_time <= end_date_time_1s:
     df.to_csv(filename, index=False)  # dataframe is uploaded onto csv
     curr_date_time += delta
 
-FILE_NAME_FORMAT_5m = "%m-%y"
+FILE_NAME_FORMAT_5m = "%Y-%m"
 
 curr_date_time = start_date_time_5m
 
@@ -66,7 +69,7 @@ while curr_date_time <= end_date_time_5m:
     end_date_time = last_day_of_month(curr_date_time)  # end_date is year:month:last_day_of_month 11:59:59
     end_date_time = datetime(end_date_time.year, end_date_time.month, end_date_time.day, 23, 59, 59)
     sql_query = pd.read_sql_query('''
-                                  SELECT * FROM ZEDI_5m WHERE date_and_time BETWEEN ? AND ?
+                                  SELECT DATE_AND_TIME, TEMPERATURE, HUMIDITY, PRESSURE, AQI, CO2, PIR1, PIR2 FROM ZEDI_5m WHERE date_and_time BETWEEN ? AND ?
                                   ''', conn, params=[start_date_time, end_date_time])
     # here, the 'conn' is the variable that contains your database connection information
 
