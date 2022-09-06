@@ -10,20 +10,33 @@ range_per = float(input("Enter percentage above upper bound that is allowed: "))
 des_freq = int(input("Enter desired frequency of data to be considered as legit: "))  # the desired frequency of cleansing
 
 
+# to add NaN as if they are 0's
+def add_nan(var):
+    ans = var
+    if var == float("NaN"):
+        ans = 0.0
+    return ans
+
+
 # code for error correction while conversion to float i.e there could be blank fields
 def conv(var):
     try:
         ans = float(var)
     except:
-        ans = None
+        ans = float("NaN")
         print(end="")
     return ans
+
+
+# to check if a value is NaN
+def isNaN(num):
+    return num != num
 
 
 # function to make string blank if value is none
 def re_conv(var):
     ans = ""
-    if var is not None:
+    if not isNaN(var):
         ans = str(var)
     return ans
 
@@ -37,7 +50,7 @@ def cont_series_cleanse(test_data):
     # accepted_top is range_top with percentage added
     accepted_top = range_top * (range_per + 100) / 100
     for i in range(len(test_data)):
-        if test_data[i] is not None:
+        if not isNaN(test_data[i]):
             if range_top < test_data[i] < accepted_top:
                 # finding out continuous series of data that is between accepted_top and range_top
                 if len(end) > 0 and end[len(end) - 1] == i - 1:
@@ -90,9 +103,14 @@ def cleanse_1s(all_lines):
     new_lines = []
     # lines stitching
     for i in range(len(all_lines)):
+        power_r = conv(current_r[i])*new_voltage_r[i]
+        power_y = conv(current_y[i])*new_voltage_y[i]
+        power_b = conv(current_b[i])*new_voltage_b[i]
+        power_tot = add_nan(power_r) + add_nan(power_y) + add_nan(power_b)
         line = epoch[i] + DELIM + current_r[i] + DELIM + current_y[i] + DELIM + current_b[i] + DELIM + re_conv(
                new_voltage_r[i]) + DELIM + re_conv(new_voltage_y[i]) + DELIM + re_conv(new_voltage_b[i]) + DELIM \
-               + frequency_r[i] + DELIM + frequency_y[i] + DELIM + frequency_b[i]
+               + frequency_r[i] + DELIM + frequency_y[i] + DELIM + frequency_b[i] + DELIM + re_conv(power_r) \
+               + DELIM + re_conv(power_y) + DELIM + re_conv(power_b) + DELIM + re_conv(power_tot)
         new_lines.append(line)
     return new_lines
 
