@@ -11,6 +11,8 @@ node_path = input("Enter path to node: ")
 # the final directories where segregated excel files need to be created (used in extractor)
 directory_1s = input("Enter path for directory of 1s_sorted_data for this node: ")
 directory_5m = input("Enter path for directory of 5m_sorted_data for this node: ")
+error_file_path = input("Enter error file path: ")
+err = open(error_file_path, "w")
 
 # Indian timezone for epoch
 tz_GMT = pytz.timezone("UTC")
@@ -55,12 +57,16 @@ DELIM = "|"
 val = None
 
 
+curr_file_name = ""
+curr_line_no = ""
 # function for error correction
 def conv(var):
     try:
         ans = float(var)
     except:
-        print("Erraneous data: " + var)
+        err.write("Curr file: " + curr_file_name + ", ")
+        err.write("Curr_line: " + curr_line_no + ", ")
+        err.write("Erraneous data in field: " + var + "\n")
         ans = val
     return ans
 
@@ -81,7 +87,9 @@ def updation(dataframe_id, values):
             try:
                 epoch = int(values[i])
             except:
-                print("Invalid epoch data " + values[i])
+                err.write("Curr file: " + curr_file_name + ", ")
+                err.write("Curr_line: " + curr_line_no + ", ")
+                err.write("Invalid epoch data: " + values[i] + "\n")
                 i = i+3
                 continue
             curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)  # epoch to datetime object converter
@@ -115,7 +123,9 @@ def updation(dataframe_id, values):
             try:
                 epoch = int(values[i])
             except:
-                print("Invalid epoch data " + values[i])
+                err.write("Curr file: " + curr_file_name + ", ")
+                err.write("Curr_line: " + curr_line_no + ", ")
+                err.write("Invalid epoch data: " + values[i] + "\n")
                 i = i+3
                 continue
             curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)
@@ -146,7 +156,9 @@ def updation(dataframe_id, values):
             try:
                 epoch = int(values[i])
             except:
-                print("Invalid epoch data " + values[i])
+                err.write("Curr file: " + curr_file_name + ", ")
+                err.write("Curr_line: " + curr_line_no + ", ")
+                err.write("Invalid epoch data: " + values[i] + "\n")
                 i = i+3
                 continue
             curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)  # epoch to datetime object converter
@@ -176,7 +188,9 @@ def updation(dataframe_id, values):
             try:
                 epoch = int(values[i])
             except:
-                print("Invalid epoch data " + values[i])
+                err.write("Curr file: " + curr_file_name + ", ")
+                err.write("Curr_line: " + curr_line_no + ", ")
+                err.write("Invalid epoch data: " + values[i] + "\n")
                 i = i+2
                 continue
             curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)
@@ -201,7 +215,9 @@ def updation(dataframe_id, values):
             try:
                 epoch = int(values[i])
             except:
-                print("Invalid epoch data " + values[i])
+                err.write("Curr file: " + curr_file_name + ", ")
+                err.write("Curr_line: " + curr_line_no + ", ")
+                err.write("Invalid epoch data: " + values[i] + "\n")
                 i = i+2
                 continue
             curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)
@@ -226,7 +242,9 @@ def updation(dataframe_id, values):
             try:
                 epoch = int(values[i])
             except:
-                print("Invalid epoch data " + values[i])
+                err.write("Curr file: " + curr_file_name + ", ")
+                err.write("Curr_line: " + curr_line_no + ", ")
+                err.write("Invalid epoch data: " + values[i] + "\n")
                 i = i + 2
                 continue
             curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)
@@ -250,7 +268,9 @@ def updation(dataframe_id, values):
         try:
             epoch = int(values[i])
         except:
-            print("Invalid epoch 7 data")
+            err.write("Curr file: " + curr_file_name + ", ")
+            err.write("Curr_line: " + curr_line_no + ", ")
+            err.write("Invalid epoch data: " + values[i] + "\n")
             return
         curr_date_time = datetime.fromtimestamp(epoch, tz_GMT)
         co2 = conv(values[i - 4])
@@ -288,7 +308,9 @@ def updation(dataframe_id, values):
                          '?, ?, ?)',
                          (str(curr_date_time.strftime(format)), temperature, humidity, pressure, aqi, co2, pir1, pir2))
     else:
-        print("Invalid dataframe_id: " + dataframe_id)
+        err.write("Curr file: " + curr_file_name + ", ")
+        err.write("Curr_line: " + curr_line_no + ", ")
+        err.write("Invalid dataframe_id(i.e a break in line): " + str(dataframe_id) + "\n")
 
 
 # iterating through all days in the node i.e folders within directory
@@ -296,16 +318,59 @@ for root, subdirectories, files in os.walk(node_path):
     print("Files starting to iterate..")
     # iterating through all files in that day i.e files in folders
     for filename in files:
+        curr_file_name = os.path.join(root, filename)
         print("Started: " + os.path.join(root, filename))
         file = open(os.path.join(root, filename))
         # iterating through all lines in the file
+        line_no = 1
+        values = []
+        flag = 0
         for line in file:
-            values = line.split(DELIM)  # removing delimiter and extracting data in array fo strings
+            curr_line_no = str(line_no)
+            line = line.strip()
+            values.extend(line.split(DELIM))  # removing delimiter and extracting data in array for strings
             try:
                 ID = int(values[3])
             except:
+                values.clear()
                 continue
-            updation(ID, values)
+
+            if 3 >= ID >= 1:
+                if len(values) == 184:
+                    updation(ID, values)
+                elif len(values) < 184 and flag == 0:
+                    err.write("Curr file: " + curr_file_name + ", ")
+                    err.write("Curr_line: " + curr_line_no + ", ")
+                    err.write("Unexpected line break" + "\n")
+                    flag = 1
+                    continue
+                else:
+                    err.write("Curr file: " + curr_file_name + ", ")
+                    err.write("Curr_line: " + curr_line_no + ", ")
+                    err.write("Unexpected line break" + "\n")
+            elif 6 >= ID >= 4:
+                if len(values) == 124:
+                    updation(ID, values)
+                elif len(values) < 124 and flag == 0:
+                    err.write("Curr file: " + curr_file_name + ", ")
+                    err.write("Curr_line: " + curr_line_no + ", ")
+                    err.write("Unexpected line break" + "\n")
+                    flag = 1
+                    continue
+                else:
+                    err.write("Curr file: " + curr_file_name + ", ")
+                    err.write("Curr_line: " + curr_line_no + ", ")
+                    err.write("Unexpected line break" + "\n")
+            elif ID == 7:
+                updation(ID, values)
+            else:
+                err.write("Curr file: " + curr_file_name + ", ")
+                err.write("Curr_line: " + curr_line_no + ", ")
+                err.write("Invalid dataframe_id(i.e a break in line): " + str(ID) + "\n")
+
+            flag = 0
+            line_no = line_no+1
+            values.clear()
         print("Ended: " + os.path.join(root, filename))
         file.close()
 crsr.execute("UPDATE ZEDI_1s SET POWER_TOT = POWER_R + POWER_Y + POWER_B")
