@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 import pytz
 
-# Connecting with sql database (database auto creats if not present)
+# Connecting with sql database (database auto create if not present)
 connection = sqlite3.connect("ZEDI_data.db")
 
 node_path = input("Enter path to node: ")
@@ -11,7 +11,13 @@ node_path = input("Enter path to node: ")
 # the final directories where segregated excel files need to be created (used in extractor)
 directory_1s = input("Enter path for directory of 1s_sorted_data for this node: ")
 directory_5m = input("Enter path for directory of 5m_sorted_data for this node: ")
+
+# the path to the error storing text file where errors are loaded
 error_file_path = input("Enter error file path: ")
+if os.path.exists(error_file_path) is False:
+    print("Enter valid text file path next time")
+    quit()
+
 err = open(error_file_path, "w")
 
 # Indian timezone for epoch
@@ -335,6 +341,7 @@ for root, subdirectories, files in os.walk(node_path):
                 values.clear()
                 continue
 
+            # the code that deals with line breaks if present
             if 3 >= ID >= 1:
                 if len(values) == 184:
                     updation(ID, values)
