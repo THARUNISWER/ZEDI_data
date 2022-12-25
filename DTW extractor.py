@@ -1,4 +1,6 @@
 DELIM = ','
+
+# add main file's name here
 root_file = "C:\\Users\\tharu\\Downloads\\main_data_dtw.csv"
 file = open(root_file)
 print("Started: " + root_file)
