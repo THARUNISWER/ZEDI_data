@@ -8,6 +8,8 @@ if not os.path.exists(backup):
     print("First run DTW extractor.py")
     exit(0)
 backupfile = open(backup)
+
+# add fridge file's name here
 target_file_fridge = "C:\\Users\\tharu\\Downloads\\Fridge\\DATALOG.csv"
 target_file_geyser = ""
 target_file_invac = ""
