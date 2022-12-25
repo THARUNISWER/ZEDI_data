@@ -78,7 +78,7 @@ def compare(req_power_arr):
         if distance < min_distance:
             req_start_time = power_window_0[0]
             min_distance = distance
-        print("Current distance: " + str(distance))
+        print("Current distance: " + str(distance) + " Current start time: " + str(powerp_tot_avg_0))
         j = j + 1
 
     return req_start_time, min_distance
