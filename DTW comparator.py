@@ -34,6 +34,7 @@ def dtw(s, t):
     return dtw_matrix
 
 
+# lesser the distance more is the similarity
 def compare(req_power_arr):
     print("Window comparison between main file and target started")
     win = len(req_power_arr)
