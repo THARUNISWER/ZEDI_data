@@ -11,6 +11,7 @@ backupfile = open(backup)
 
 # add fridge file's name here
 target_file_fridge = "C:\\Users\\tharu\\Downloads\\Fridge\\DATALOG.csv"
+output_file_fridge = "fridge_dtw.csv"
 target_file_geyser = ""
 target_file_invac = ""
 
@@ -62,7 +63,8 @@ def compare(req_power_arr):
             # dist = dtw(x,y)
             # min_distance = dist[win][win]
 
-        req_start_time = power_window_0[0]
+        req_start = power_window_0
+        req_window = power_window_1
         power_window_0.pop(0)
         power_window_1.pop(0)
         power_window_0.append(powerp_tot_avg_0)
@@ -77,12 +79,13 @@ def compare(req_power_arr):
         # distance = dist[win][win]
 
         if distance < min_distance:
-            req_start_time = power_window_0[0]
+            req_start = power_window_0
+            req_window = power_window_1
             min_distance = distance
         print("Current distance: " + str(distance) + " Current start time: " + str(powerp_tot_avg_0))
         j = j + 1
 
-    return req_start_time, min_distance
+    return req_start, req_window, min_distance
 
 
 # case1: Only Fridge
@@ -97,8 +100,15 @@ for line in lines:
     if powerp_field == "  NAN ":
         continue
     req_power_array.append(float(powerp_field))
-fridge_start_time, fridge_index = compare(req_power_array)
-print("Fridge's start time is: " + str(fridge_start_time))
-print("Fridge's smallest similarity index is: " + str(fridge_index))
+fridge_start_time, fridge_window, fridge_index = compare(req_power_array)
 target_file.close()
 print("Ended: " + target_file_fridge)
+i = 0
+out_file = open(output_file_fridge, "w")
+out_file.write("Fridge_time" + DELIM + "PowerP_Tot_Avg" + DELIM + "Fridge_power" + "\n")
+for i in range(0, len(req_power_array)):
+    out_file.write(str(fridge_start_time[i]) + DELIM + str(fridge_window[i]) + DELIM + str(req_power_array[i]) + "\n")
+out_file.close()
+print("Fridge's most similar start time is: " + str(fridge_start_time[0]))
+print("Fridge's smallest similarity index is: " + str(fridge_index))
+print("Data is in file fridge_dtw.csv ")
